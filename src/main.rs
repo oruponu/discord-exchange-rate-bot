@@ -20,6 +20,15 @@ struct Currency {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = reqwest::get("https://forex-api.coin.z.com/public/v1/ticker").await?;
     let body = response.json::<TickerResponse>().await?;
-    println!("{:?}", body);
+    let usd_jpy = body
+        .data
+        .into_iter()
+        .find(|currency| currency.symbol == "USD_JPY");
+
+    match usd_jpy {
+        Some(currency) => println!("USD/JPY: {}", currency.bid),
+        None => println!("米ドル／日本円の為替レートを取得できませんでした"),
+    }
+
     Ok(())
 }
