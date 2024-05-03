@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serenity::async_trait;
+use serenity::builder::{CreateEmbed, CreateMessage};
 use serenity::model::gateway::Ready;
 use serenity::model::id::ChannelId;
 use serenity::prelude::{Client, Context, EventHandler, GatewayIntents};
@@ -35,6 +36,16 @@ struct Currency {
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
+
+        let exchange_rate = fetch_usd_jpy_exchange_rate().await.unwrap();
+        let title = "USD/JPY";
+        let description = &format!("{} 円", exchange_rate.bid);
+        let embed = CreateEmbed::new().title(title).description(description);
+        let builder = CreateMessage::new().embed(embed);
+        self.channel_id
+            .send_message(&ctx.http, builder)
+            .await
+            .unwrap();
     }
 }
 
@@ -57,9 +68,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .event_handler(Handler { channel_id })
         .await?;
     client.start().await?;
-
-    let exchange_rate = fetch_usd_jpy_exchange_rate().await?;
-    println!("USD/JPY: {}", exchange_rate.bid);
 
     Ok(())
 }
