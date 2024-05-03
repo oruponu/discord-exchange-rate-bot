@@ -35,17 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     println!("{:?}", config);
 
-    let response = reqwest::get("https://forex-api.coin.z.com/public/v1/ticker").await?;
-    let body = response.json::<TickerResponse>().await?;
-    let usd_jpy = body
-        .data
-        .into_iter()
-        .find(|currency| currency.symbol == "USD_JPY");
-
-    match usd_jpy {
-        Some(currency) => println!("USD/JPY: {}", currency.bid),
-        None => println!("米ドル／日本円の為替レートを取得できませんでした"),
-    }
+    let exchange_rate = fetch_usd_jpy_exchange_rate().await?;
+    println!("USD/JPY: {}", exchange_rate.bid);
 
     Ok(())
 }
@@ -64,4 +55,17 @@ fn read_config_file(path_buf: PathBuf) -> Result<Config, Box<dyn std::error::Err
         }
     };
     Ok(config)
+}
+
+async fn fetch_usd_jpy_exchange_rate() -> Result<Currency, Box<dyn std::error::Error>> {
+    let response = reqwest::get("https://forex-api.coin.z.com/public/v1/ticker").await?;
+    let body = response.json::<TickerResponse>().await?;
+    match body
+        .data
+        .into_iter()
+        .find(|currency| currency.symbol == "USD_JPY")
+    {
+        Some(currency) => Ok(currency),
+        None => Err("USD/JPYの為替レートを取得できませんでした".into()),
+    }
 }
