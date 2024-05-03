@@ -1,6 +1,12 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
+struct Config {
+    token: String,
+    channel_id: u64,
+}
+
+#[derive(Deserialize, Debug)]
 struct TickerResponse {
     status: i32,
     data: Vec<Currency>,
