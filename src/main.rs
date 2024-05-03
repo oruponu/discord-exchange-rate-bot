@@ -1,10 +1,18 @@
 use serde::Deserialize;
+use serenity::async_trait;
+use serenity::model::gateway::Ready;
+use serenity::model::id::ChannelId;
+use serenity::prelude::{Client, Context, EventHandler, GatewayIntents};
 use std::{path::PathBuf, str::FromStr};
 
 #[derive(Deserialize, Debug)]
 struct Config {
     token: String,
     channel_id: u64,
+}
+
+struct Handler {
+    channel_id: ChannelId,
 }
 
 #[derive(Deserialize, Debug)]
@@ -23,6 +31,13 @@ struct Currency {
     status: String,
 }
 
+#[async_trait]
+impl EventHandler for Handler {
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path_buf = PathBuf::from_str("config.toml").unwrap();
@@ -34,6 +49,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     println!("{:?}", config);
+
+    let token = config.token;
+    let channel_id = ChannelId::new(config.channel_id);
+    let intents = GatewayIntents::GUILD_MESSAGES;
+    let mut client = Client::builder(&token, intents)
+        .event_handler(Handler { channel_id })
+        .await?;
+    client.start().await?;
 
     let exchange_rate = fetch_usd_jpy_exchange_rate().await?;
     println!("USD/JPY: {}", exchange_rate.bid);
