@@ -1,3 +1,4 @@
+use chrono::{Local, Timelike};
 use serde::Deserialize;
 use serenity::async_trait;
 use serenity::builder::{CreateEmbed, CreateMessage};
@@ -32,15 +33,28 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let exchange_rate = fetch_usd_jpy_exchange_rate().await.unwrap();
-        let title = "USD/JPY";
-        let description = &format!("{} 円", exchange_rate.bid);
-        let embed = CreateEmbed::new().title(title).description(description);
-        let builder = CreateMessage::new().embed(embed);
-        self.channel_id
-            .send_message(&ctx.http, builder)
-            .await
-            .unwrap();
+        let now = Local::now();
+        let next_hour =
+            now.with_minute(0).unwrap().with_second(0).unwrap() + chrono::Duration::hours(1);
+        let wait_time = next_hour - now;
+        println!("次の取得まで {} 秒待機", wait_time.num_seconds());
+        tokio::time::sleep(wait_time.to_std().unwrap()).await;
+
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3600));
+
+        loop {
+            interval.tick().await;
+
+            let exchange_rate = fetch_usd_jpy_exchange_rate().await.unwrap();
+            let title = "USD/JPY";
+            let description = &format!("{} 円", exchange_rate.bid);
+            let embed = CreateEmbed::new().title(title).description(description);
+            let builder = CreateMessage::new().embed(embed);
+            self.channel_id
+                .send_message(&ctx.http, builder)
+                .await
+                .unwrap();
+        }
     }
 }
 
