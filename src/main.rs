@@ -1,5 +1,5 @@
 use chrono::{Local, Timelike};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serenity::async_trait;
 use serenity::builder::{CreateEmbed, CreateMessage};
 use serenity::model::gateway::Ready;
@@ -22,7 +22,7 @@ struct TickerResponse {
     data: Vec<Currency>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Currency {
     symbol: String,
     bid: String,
@@ -48,6 +48,11 @@ impl EventHandler for Handler {
             let exchange_rate = fetch_usd_jpy_exchange_rate().await.unwrap();
             let title = "USD/JPY";
             let description = &format!("{} 円", exchange_rate.bid);
+
+            let path_buf = PathBuf::from_str("exchange_rate.toml").unwrap();
+            let toml: String = toml::to_string(&exchange_rate).unwrap();
+            std::fs::write(&path_buf, toml).unwrap();
+
             let embed = CreateEmbed::new().title(title).description(description);
             let builder = CreateMessage::new().embed(embed);
             self.channel_id
