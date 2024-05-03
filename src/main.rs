@@ -54,7 +54,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err(e);
         }
     };
-    println!("{:?}", config);
 
     let token = config.token;
     let channel_id = ChannelId::new(config.channel_id);
