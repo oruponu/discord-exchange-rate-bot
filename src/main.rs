@@ -50,10 +50,20 @@ impl EventHandler for Handler {
             let description = &format!("{} 円", exchange_rate.bid);
 
             let path_buf = PathBuf::from_str("exchange_rate.toml").unwrap();
+            let contents = std::fs::read_to_string(&path_buf).unwrap();
+            let latest_exchange_rate = toml::from_str::<Currency>(&contents).unwrap();
             let toml: String = toml::to_string(&exchange_rate).unwrap();
             std::fs::write(&path_buf, toml).unwrap();
+            let color = if exchange_rate.bid > latest_exchange_rate.bid {
+                0xff0000
+            } else {
+                0x00ff00
+            };
 
-            let embed = CreateEmbed::new().title(title).description(description);
+            let embed = CreateEmbed::new()
+                .title(title)
+                .description(description)
+                .color(color);
             let builder = CreateMessage::new().embed(embed);
             self.channel_id
                 .send_message(&ctx.http, builder)
