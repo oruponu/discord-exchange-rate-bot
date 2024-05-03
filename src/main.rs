@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::{path::PathBuf, str::FromStr};
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -24,16 +25,12 @@ struct Currency {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let contents = match std::fs::read_to_string("config.toml") {
-        Ok(contents) => contents,
-        Err(e) => {
-            return Err(e.into());
-        }
-    };
-    let config = match toml::from_str::<Config>(&contents) {
+    let path_buf = PathBuf::from_str("config.toml").unwrap();
+    let config = match read_config_file(path_buf) {
         Ok(config) => config,
         Err(e) => {
-            return Err(e.into());
+            println!("設定ファイルの読み込みに失敗しました");
+            return Err(e);
         }
     };
     println!("{:?}", config);
@@ -51,4 +48,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+fn read_config_file(path_buf: PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
+    let contents = match std::fs::read_to_string(path_buf) {
+        Ok(contents) => contents,
+        Err(e) => {
+            return Err(e.into());
+        }
+    };
+    let config = match toml::from_str::<Config>(&contents) {
+        Ok(config) => config,
+        Err(e) => {
+            return Err(e.into());
+        }
+    };
+    Ok(config)
 }
