@@ -46,7 +46,13 @@ impl EventHandler for Handler {
         loop {
             interval.tick().await;
 
-            let exchange_rate = fetch_usd_jpy_exchange_rate().await.unwrap();
+            let exchange_rate = match fetch_usd_jpy_exchange_rate().await {
+                Ok(exchange_rate) => exchange_rate,
+                Err(e) => {
+                    println!("{}", e);
+                    continue;
+                }
+            };
             if exchange_rate.status != "OPEN" {
                 println!("為替取引時間外です");
                 continue;
