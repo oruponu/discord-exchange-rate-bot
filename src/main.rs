@@ -26,6 +26,7 @@ struct TickerResponse {
 struct Currency {
     symbol: String,
     bid: String,
+    status: String,
 }
 
 #[async_trait]
@@ -46,6 +47,10 @@ impl EventHandler for Handler {
             interval.tick().await;
 
             let exchange_rate = fetch_usd_jpy_exchange_rate().await.unwrap();
+            if exchange_rate.status != "OPEN" {
+                println!("為替取引時間外です");
+                continue;
+            }
             let title = "USD/JPY";
             let description = &format!("{} 円", exchange_rate.bid);
 
